@@ -1,0 +1,5 @@
+[INFO] Server started
+[WARNING] Low disk space
+[ERROR] Database connection failed
+[INFO] User logged in
+[ERROR] Unauthorized access attempt

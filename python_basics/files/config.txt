@@ -1,0 +1,6 @@
+Version: 2.4.1
+Author: DevTeam
+--- DATA START ---
+setting_one = True
+setting_two = 42
+setting_three = "debug"
