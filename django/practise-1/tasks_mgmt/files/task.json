@@ -1,0 +1,26 @@
+[
+    {
+        "id": 1,
+        "title": "Review project requirements",
+        "description": "Read the project brief and confirm the scope, requirements, and deadlines.",
+        "status": "pending"
+    },
+    {
+        "id": 2,
+        "title": "Set up development environment",
+        "description": "Install dependencies, configure the project, and verify the app runs locally.",
+        "status": "in_progress"
+    },
+    {
+        "id": 3,
+        "title": "Implement core feature",
+        "description": "Build the main functionality and ensure it meets the acceptance criteria.",
+        "status": "pending"
+    },
+    {
+        "id": 5,
+        "title": "toxic",
+        "description": "Kgf rip off story",
+        "status": "purged"
+    }
+]
