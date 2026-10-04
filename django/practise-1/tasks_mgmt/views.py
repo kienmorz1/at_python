@@ -2,6 +2,8 @@ from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
+from .models import Task
+from .serializers import TaskSerializer
 from typing import override
 import json
 
@@ -68,58 +70,64 @@ class TaskView(APIView):
     @override # This is just convention to override the method
     def post(self, request): ## cannot change the method name
         data = request.data
-        tasks = self._get_all_tasks()
-        task = {
-            "id": len(tasks) + 1,
-            "title": data["title"],
-            "description": data["description"],
-            "completed": data["status"],
-        }
-        with open(TASK_FILE_NAME, 'w') as file:
-            tasks.append(task)
-            json.dump(tasks, file, indent=4)
-        return Response({"message":"Task Created!!!"},status=201)
-    
+        serializer = TaskSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        serializer.save()
+        return Response(serializer.data, status=201)
+
     # @override
     # def post(self, request, url="hello-world"):
     #     return Response({"message":"Hello world"},status=201)
+    
 
-    @override
     def get(self,request, id=None):
-        if id is None:
-            output = self._get_all_tasks()
-            return Response(output)
-        else:
-            try:
-                output = self._get_all_tasks()
-                for task in output:
-                    if task["id"] == id:
-                        return Response(task)
-                return Response({"error": f"Task {id} Not Found"},status=404)
-            except:
-                return Response({"error":"Invalid Request"} ,status=400)
+        try:
+            if id is None:
+                task = Task.objects.all()
+                serializer = TaskSerializer(task, many=True)
+                serialized_data = serializer.data
+                return Response(serialized_data)
+                
+            else:
+                task = Task.objects.get(id=id)
+                serializer = TaskSerializer(task)
+                serialized_data = serializer.data
+                return Response(serialized_data)
+        except Task.DoesNotExist:
+            return Response({"error": f"Task {id} Not Found"}, status=404)
 
     @override
     def put(self, request, id):
-        tasks = self._get_all_tasks()
-        task = next((task for task in tasks if task["id"] == id), None)
-        if task is None:
+        try:
+            data = request.data
+            task = Task.objects.get(id=id)
+            serializer = TaskSerializer(task, data=data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=400)
+            serializer.save()
+            return Response(serializer.data, status=200)
+        except Task.DoesNotExist:
             return Response({"error": f"Task {id} Not Found"}, status=404)
-
-        for field in ("title", "description", "status", "completed"):
-            if field in request.data:
-                task[field] = request.data[field]
-
-        self._save_all_tasks(tasks)
-        return Response(task)
-
+    
+    @override
+    def patch(self, request, id):
+        try:
+            data = request.data
+            task = Task.objects.get(id=id)
+            serializer = TaskSerializer(task, data=data, partial=True)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=400)
+            serializer.save()
+            return Response(serializer.data, status=200)
+        except Task.DoesNotExist:
+            return Response({"error": f"Task {id} Not Found"}, status=404)
+        
     @override
     def delete(self, request, id):
-        tasks = self._get_all_tasks()
-        task = next((task for task in tasks if task["id"] == id), None)
-        if task is None:
+        try:
+            task = Task.objects.get(id=id)
+            task.delete()
+            return Response({"message": f"Task {id} Deleted"}, status=200)
+        except Task.DoesNotExist:
             return Response({"error": f"Task {id} Not Found"}, status=404)
-
-        tasks.remove(task)
-        self._save_all_tasks(tasks)
-        return Response(status=204)
