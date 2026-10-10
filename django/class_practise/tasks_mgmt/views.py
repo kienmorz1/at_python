@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
+from rest_framework.viewsets import ViewSet, ModelViewSet
 from .models import Task
 from .serializers import TaskSerializer
 from typing import override
@@ -10,10 +11,6 @@ import json
 # Create your views here.
 TASK_FILE_NAME="tasks_mgmt/files/task.json"
 ## This decorator converts add_numbers() as view
-
-# def _get_all_tasks():
-#     with open(TASK_FILE_NAME,"r") as task_file:
-#         return json.loads(task_file.read())
 
 @api_view()
 def add_numbers(request):
@@ -25,38 +22,6 @@ def add_numbers(request):
         return Response({"sum": result})
     except:
         return Response({"error":"Invalid Numbers"},status=400)
-    
-
-# @api_view()
-# def get_all_tasks(request):
-#     output = _get_all_tasks()
-#     return Response(output)
-
-# @api_view()
-# def get_tasks_by_id(request, id):
-#     try:
-#         output = _get_all_tasks()
-#         for task in output:
-#             if task["id"] == id:
-#                 return Response(task)
-#         return Response({"error": f"Task {id} Not Found"},status=404)
-#     except:
-#         return Response({"error":"Invalid Request"} ,status=400)
-
-# @api_view(['POST'])
-# def create_task(request):
-#     data = request.data
-#     tasks = __get_all_tasks()
-#     task = {
-#         "id": len(tasks) + 1,
-#         "title": data["title"],
-#         "description": data["description"],
-#         "completed": data["status"],
-#     }
-#     with open(TASK_FILE_NAME, 'w') as file:
-#         tasks.append(task)
-#         json.dump(tasks, file, indent=4)
-#     return Response({"message":"Task Created!!!"},status=201)
 
 class TaskView(APIView):
     def _get_all_tasks(self):
@@ -131,3 +96,71 @@ class TaskView(APIView):
             return Response({"message": f"Task {id} Deleted"}, status=200)
         except Task.DoesNotExist:
             return Response({"error": f"Task {id} Not Found"}, status=404)
+
+# class TaskViewSet(ViewSet):
+    
+
+#     def list(self, request):
+#         tasks = Task.objects.all()
+#         serializer = TaskSerializer(tasks, many=True)
+#         return Response(serializer.data)
+    
+#     def retrieve(self, request, pk=None):
+#         try:
+#             task = Task.objects.get(id=pk)
+#             serializer = TaskSerializer(task)
+#             return Response(serializer.data)
+#         except Task.DoesNotExist:
+#             return Response(
+#                 {"error":"Task not found"},status=404
+#             )
+    
+#     def create(self, request):
+#         serializer = TaskSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=201)
+#         return Response(serializer.errors, status=400)
+
+#     def update(self, request, pk=None):
+#         try:
+#             task = Task.objects.get(id=pk)
+#         except Task.DoesNotExist:
+#             return Response({"error": "Task not found"}, status=404)
+
+#         serializer = TaskSerializer(task, data=request.data)
+#         if not serializer.is_valid():
+#             return Response(serializer.errors, status=400)
+#         serializer.save()
+#         return Response(serializer.data, status=200)
+
+#     def partial_update(self, request, pk=None):
+#         try:
+#             task = Task.objects.get(id=pk)
+#         except Task.DoesNotExist:
+#             return Response({"error": "Task not found"}, status=404)
+
+#         serializer = TaskSerializer(task, data=request.data, partial=True)
+#         if not serializer.is_valid():
+#             return Response(serializer.errors, status=400)
+#         serializer.save()
+#         return Response(serializer.data, status=200)
+
+#     def destroy(self, request, pk=None):
+#         try:
+#             task = Task.objects.get(id=pk)
+#         except Task.DoesNotExist:
+#             return Response({"error": "Task not found"}, status=404)
+
+#         task.delete()
+#         return Response(status=204)
+
+class TaskViewSet(ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+    
+    @action(detail=False, methods=["GET"],url_path="completed")
+    def get_only_completed_tasks(self,request):
+        tasks = Task.objects.filter(completed=True)
+        serializer = TaskSerializer(tasks, many=True)
+        return Response(serializer.data)
