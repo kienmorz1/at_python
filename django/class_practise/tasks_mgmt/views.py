@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, action
 from rest_framework.viewsets import ViewSet, ModelViewSet
-from .models import Task
-from .serializers import TaskSerializer
+from .models import Task, User
+from .serializers import AllTaskUserSerializer, TaskSerializer, UserSerializer
 from typing import override
 import json
 
@@ -154,6 +154,25 @@ class TaskView(APIView):
 
 #         task.delete()
 #         return Response(status=204)
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    @action(detail=True, methods=["GET"], url_path="tasks")
+    def get_tasks_of_a_user(self,request, pk=None):
+        user = self.get_object()
+        if len(user.tasks_details.all()) > 0:
+            serializer = AllTaskUserSerializer({
+                "user": user,
+                "task_list": user.tasks_details.all(),
+            })
+            return Response(serializer.data)
+        else:
+            return Response(
+                {"error":"No Tasks Found"},status=404
+            )
+        
+
 
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
