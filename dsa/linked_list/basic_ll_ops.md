@@ -2,7 +2,9 @@
 
 This program defines a singly linked list and demonstrates adding, removing,
 printing, and counting nodes. Each node stores a `data` value and a `next`
-reference; the list stores a `head` reference to its first node.
+reference; the list stores a `head` reference to its first node. The list
+supports insertion at either end and removal from the beginning, end, by
+1-based position, or by value.
 
 ## Approach
 
@@ -19,10 +21,19 @@ reference; the list stores a `head` reference to its first node.
    `head` to the next node, and returns the saved value. It returns `None` if
    the list is empty.
 6. **Insert at the end.** `addLast` walks to the last node and connects a new
-   node through its `next` reference.
+   node through its `next` reference. If the list is empty, it calls
+   `addFirst`.
 7. **Remove from the end.** `removeLast` walks to the node immediately before
-   the last one, saves the last value, disconnects the last node, and returns
-   the saved value.
+   the last one and disconnects the last node. It currently returns `None`
+   whether or not a node was removed.
+8. **Remove by position.** `removeKthNode(k)` treats `k` as a 1-based position,
+   unlinks that node, and returns its value. For example, `k == 1` removes the
+   head.
+9. **Remove by value.** `removeXval(X)` searches from the head, unlinks the
+   first node whose value equals `X`, and returns that value. It returns
+   `None` if the list is empty or no matching value is found.
+10. **Count and print.** `size` traverses the list and returns its number of
+    nodes. `printLL` prints each node's value on its own line.
 
 ## Example walkthrough
 
@@ -40,11 +51,17 @@ It removes and prints the first three values (`9`, `8`, `7`), leaving:
 ```
 
 It then appends `10`, `11`, `12`, and `13`, removes the last two values
-(`13`, `12`), and prints the remaining list:
+(`13`, `12`), and prints the remaining list. `removeLast` returns `None`, so
+the two demonstration messages show `None` even though the tail nodes are
+removed:
 
 ```text
 6 -> 5 -> 10 -> 11
 ```
+
+Next, `removeKthNode(2)` removes the value `5`, leaving `6 -> 10 -> 11`.
+Finally, `removeXval(6)` finds and removes the head value `6`, leaving
+`10 -> 11`.
 
 ## Complexity
 
@@ -55,15 +72,19 @@ Let `n` be the number of nodes.
 | `printLL`, `size` | O(n) | O(1) |
 | `addFirst`, `removeFirst` | O(1) | O(1) |
 | `addLast`, `removeLast` | O(n) | O(1) |
+| `removeKthNode(k)` | O(k) | O(1) |
+| `removeXval(X)` | O(n) | O(1) |
 
 ## Current implementation edge cases
 
-- `addLast` does not stop after calling `addFirst` on an empty list. It then
-  creates and appends another node with the same value. Thus, appending to an
-  empty list currently creates two nodes instead of one.
-- `removeLast` handles an empty list, but its traversal assumes there are at
-  least two nodes. Calling it on a one-node list raises an error when it tries
-  to access `temp.next.next`.
+- `addLast` calls `addFirst` when the list is empty but does not return
+  afterward. It then creates and appends another node with the same value, so
+  appending to an empty list currently creates two nodes.
+- `removeLast` returns `None` for an empty or one-node list. In the one-node
+  case, it leaves the node in place. With two or more nodes, it removes the
+  last node but still returns `None`.
+- `removeKthNode` assumes the list is non-empty and `k` is a valid 1-based
+  position. It does not validate `k`; a non-positive `k` may remove the wrong
+  node, while an empty list or a position beyond the list can raise an error.
 
-These notes describe the current code; those edge cases are not exercised by
-the sample sequence.
+These notes describe the current code, including the edge cases above.
