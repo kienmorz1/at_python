@@ -46,6 +46,25 @@ class LL:
     temp.next = new_node
     return
 
+  def insertAtKthPosition(self, X, k):
+    """
+      :type head: Optional[ListNode]
+      :type x: int
+      :rtype: Optional[ListNode]
+    """
+    node = Node(X)
+    if k == 1:
+      node.next = self.head
+      return
+    temp = self.head
+    c = 1
+    while c < k-1:
+      c += 1
+      temp = temp.next
+    node.next = temp.next
+    temp.next = node
+    return
+
   def removeLast(self):
     if not self.head or self.head.next is None:
       return None
@@ -114,4 +133,7 @@ linked_list.printLL()
 print(f"Remove 2nd element: {linked_list.removeKthNode(2)}")
 linked_list.printLL()
 print(f"Remove element 6: {linked_list.removeXval(6)}")
+linked_list.printLL()
+print(f"Insert 7 at 2nd position")
+linked_list.insertAtKthPosition(7,2)
 linked_list.printLL()
