@@ -1,10 +1,14 @@
 from django.shortcuts import render
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.viewsets import ViewSet, ModelViewSet
+from .filters import TaskFilter
 from .models import Task, User
 from .serializers import AllTaskUserSerializer, TaskSerializer, UserSerializer
+from .pagination import TaskPagination
 from typing import override
 import json
 
@@ -22,6 +26,29 @@ def add_numbers(request):
         return Response({"sum": result})
     except:
         return Response({"error":"Invalid Numbers"},status=400)
+
+
+@api_view(["GET"])
+def tasks_with_filter(request):
+    tasks = Task.objects.all()
+
+    title = request.query_params.get("title")
+    if title:
+        tasks = tasks.filter(title__icontains=title)
+
+    completed = request.query_params.get("completed")
+    if completed is not None:
+        normalized_completed = completed.lower()
+        if normalized_completed not in {"true", "false"}:
+            return Response(
+                {"error": "completed must be either 'true' or 'false'"},
+                status=400,
+            )
+        tasks = tasks.filter(completed=normalized_completed == "true")
+
+    serializer = TaskSerializer(tasks, many=True)
+    return Response(serializer.data)
+
 
 class TaskView(APIView):
     def _get_all_tasks(self):
@@ -157,6 +184,9 @@ class TaskView(APIView):
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filterset_fields = ["is_active"]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ["first_name", "last_name", "email"]
 
     @action(detail=True, methods=["GET"], url_path="tasks")
     def get_tasks_of_a_user(self,request, pk=None):
@@ -177,6 +207,11 @@ class UserViewSet(ModelViewSet):
 class TaskViewSet(ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
+    pagination_class = TaskPagination
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = TaskFilter
+    ordering_fields = ['created_at']
+    ordering = ['-created_at']
     
     @action(detail=False, methods=["GET"],url_path="completed")
     def get_only_completed_tasks(self,request):
