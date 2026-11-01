@@ -1,6 +1,16 @@
 from rest_framework import serializers
 from typing import override
 from .models import Task, User
+from .utils import BcryptPasswordUtil
+
+
+def _validate_bcrypt_password_length(password):
+    if len(password.encode("utf-8")) > 72:
+        raise serializers.ValidationError(
+            "Password must be at most 72 bytes when encoded as UTF-8."
+        )
+    return password
+
 # class TaskSerializer(serializers.Serializer):
 #     id = serializers.IntegerField(read_only=True)
 #     title = serializers.CharField(max_length=100)
@@ -26,9 +36,28 @@ class TaskSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
         fields = "__all__"
+
+    def validate_password(self, password):
+        return _validate_bcrypt_password_length(password)
+
+    def create(self, validated_data):
+        validated_data["password"] = BcryptPasswordUtil.hash_password(
+            validated_data["password"]
+        )
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        instance = super().update(instance, validated_data)
+        if password is not None:
+            instance.password = BcryptPasswordUtil.hash_password(password)
+            instance.save(update_fields=["password"])
+        return instance
 
 class TaskUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -39,3 +68,10 @@ class TaskUserSerializer(serializers.ModelSerializer):
 class AllTaskUserSerializer(serializers.Serializer):
     user = UserSerializer(read_only=True)
     task_list = TaskSerializer(many=True, read_only=True)
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate_password(self, password):
+        return _validate_bcrypt_password_length(password)

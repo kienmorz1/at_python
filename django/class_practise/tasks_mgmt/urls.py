@@ -1,6 +1,6 @@
 from django.urls import path, include
 # from .views import add_numbers, get_all_tasks, get_tasks_by_id, TaskView
-from .views import add_numbers, tasks_with_filter, TaskView, TaskViewSet, UserViewSet
+from .views import add_numbers, tasks_with_filter, TaskView, TaskViewSet, UserViewSet, LoginViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ urlpatterns = [
     path("add-numbers/", add_numbers),
     path("tasks-with-filter/", tasks_with_filter, name="tasks-with-filter"),
     path("",include(router.urls)),
+    path("login/",LoginViewSet.as_view()),
     # path("tasks/",TaskView.as_view()),
     # path("tasks/<int:id>/",TaskView.as_view())
 ]

@@ -7,7 +7,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.viewsets import ViewSet, ModelViewSet
 from .filters import TaskFilter
 from .models import Task, User
-from .serializers import AllTaskUserSerializer, TaskSerializer, UserSerializer
+from .serializers import AllTaskUserSerializer, TaskSerializer, UserSerializer, LoginSerializer
+from .utils import BcryptPasswordUtil
 from .pagination import TaskPagination
 from typing import override
 import json
@@ -218,3 +219,18 @@ class TaskViewSet(ModelViewSet):
         tasks = Task.objects.filter(completed=True)
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
+
+
+class LoginViewSet(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({'error':'User Not Found'},status=400)
+        if not BcryptPasswordUtil.verify_password(password=password,hashed_password=user.password):
+            return Response({'error':'Invalid password'},status=400)
+        return Response({'email':email,'password':user.password},status=200)
