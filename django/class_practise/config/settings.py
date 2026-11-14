@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'tasks_mgmt',
+    'rest_framework_simplejwt'
 ]
 
 
@@ -137,4 +139,15 @@ MAILERS = {
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'tasks_mgmt.pagination.TaskPagination',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'tasks_mgmt.authentication.TaskUserJWTAuthentication',
+    ],
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30), # Lifetime of acces token
+    "AUTH_HEADER_TYPES": ("Bearer",), # Type of the authentication header
+    "SIGNING_KEY" : "MY_DJANGO_APPLICATION_SECRET_KEY" # Signing key for the JWT
+}
+
+AUTH_USER_MODEL = "tasks_mgmt.User"

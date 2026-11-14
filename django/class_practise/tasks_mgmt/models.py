@@ -1,15 +1,22 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 
-class User(models.Model):
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=100)
-    password = models.CharField(max_length=128, default="", blank=True)
+class User(AbstractUser):
+    email = models.EmailField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_active = models.BooleanField(default=True)
-    
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ['username','first_name','last_name']
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
 
 class Task(models.Model):
     title = models.CharField(max_length=100)

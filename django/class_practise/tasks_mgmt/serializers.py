@@ -40,22 +40,31 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = "__all__"
-
+        fields = ["id","username","email","first_name","last_name","password","created_at","updated_at","is_active"]
+        read_only_fields = ["id","created_at","update_at"]
     def validate_password(self, password):
         return _validate_bcrypt_password_length(password)
 
     def create(self, validated_data):
-        validated_data["password"] = BcryptPasswordUtil.hash_password(
-            validated_data["password"]
-        )
-        return super().create(validated_data)
+        # validated_data["password"] = BcryptPasswordUtil.hash_password(
+        #     validated_data["password"]
+        # )
+        # return super().create(validated_data)
+        password = self.validate_password.pop("password")
+        user = User(**validated_data)
+        if password:
+            user.set_password(password)
+        user.save()
+        return user
+
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
         instance = super().update(instance, validated_data)
         if password is not None:
-            instance.password = BcryptPasswordUtil.hash_password(password)
+            # instance.password = BcryptPasswordUtil.hash_password(password)
+            # instance.save(update_fields=["password"])
+            instance.set_password(password)
             instance.save(update_fields=["password"])
         return instance
 

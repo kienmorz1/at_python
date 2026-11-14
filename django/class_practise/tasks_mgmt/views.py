@@ -9,7 +9,10 @@ from .filters import TaskFilter
 from .models import Task, User
 from .serializers import AllTaskUserSerializer, TaskSerializer, UserSerializer, LoginSerializer
 from .utils import BcryptPasswordUtil
+from .authentication import create_access_token
 from .pagination import TaskPagination
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .authentication import TaskUserJWTAuthentication
 from typing import override
 import json
 
@@ -188,6 +191,15 @@ class UserViewSet(ModelViewSet):
     filterset_fields = ["is_active"]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["first_name", "last_name", "email"]
+    authentication_classes = [TaskUserJWTAuthentication]
+
+    
+    def get_permissions(self):
+        if self.action == "create":
+            permission_classes = [AllowAny]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
     @action(detail=True, methods=["GET"], url_path="tasks")
     def get_tasks_of_a_user(self,request, pk=None):
@@ -231,6 +243,18 @@ class LoginViewSet(APIView):
         user = User.objects.filter(email=email).first()
         if not user:
             return Response({'error':'User Not Found'},status=400)
+        if not user.is_active:
+            return Response({'error':'User is inactive'},status=401)
         if not BcryptPasswordUtil.verify_password(password=password,hashed_password=user.password):
             return Response({'error':'Invalid password'},status=400)
-        return Response({'email':email,'password':user.password},status=200)
+        access_token = create_access_token(user)
+        return Response({'token': str(access_token)},status=200)
+
+class ProtectedView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TaskUserJWTAuthentication]
+    def get(self,request):
+        return Response(
+            {"message": "Authenticated", "user_id": request.user.pk},
+            status=200,
+        )
